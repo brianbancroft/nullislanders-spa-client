@@ -1,30 +1,23 @@
 import React, { Component } from "react";
-import ApolloClient from "apollo-boost";
+import ApolloClient, { InMemoryCache } from "apollo-boost";
 import gql from "graphql-tag";
 
+// import {} from "apollo-cache-inmemory";
+import { createHttpLink } from "apollo-link-http";
 import "./App.css";
+import Post from "./Post";
 
 const query = gql`
   {
     posts {
-      id
-      numberVotes
       body
-      uri
-      user {
-        username
-      }
+      url
     }
   }
 `;
 
-const Post = ({ body, uri, id } = {}) => (
-  <a href={uri} key={id}>
-    <li className="post">{body}</li>
-  </a>
-);
 const renderPosts = posts =>
-  posts.map(({ body, uri, id } = {}) => <Post body={body} uri={uri} id={id} />);
+  posts.map(({ body, url, id } = {}) => <Post body={body} url={url} id={id} />);
 
 class App extends Component {
   constructor(props) {
@@ -33,11 +26,20 @@ class App extends Component {
   }
 
   async componentWillMount() {
-    const client = new ApolloClient({
-      uri: "http://localhost:3000/graphql"
+    const link = createHttpLink({
+      uri: "/graphql",
+      credentials: "same-origin"
     });
 
-    const { data } = await client.query({ query });
+    const client = new ApolloClient({
+      cache: new InMemoryCache(),
+      uri: "http://localhost:3000/graphql",
+      link
+    });
+
+    const { data } = await client.query({
+      query
+    });
     const { posts } = data;
     this.setState({ posts });
   }
